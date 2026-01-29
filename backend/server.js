@@ -1,19 +1,17 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import { GoogleGenAI } from "@google/genai";
 import getGeminiResponse from "./utils/gemini.js";
 import connectDB from "./dbconfig/dbConnect.js";
+import chatRoutes from "./routes/chat.js";
 dotenv.config();
 
 const app = express();
-const ai = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY
-});
 
 
 app.use(express.json());
 app.use(cors());
+app.use("/api", chatRoutes);
 
 app.get("/",(req,res)=>{
     res.status(200).json({message:"Running"});
