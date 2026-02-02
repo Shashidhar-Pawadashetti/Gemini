@@ -27,3 +27,5 @@ app.listen(process.env.PORT,()=>{
     connectDB();
 })
 
+
+export default app;
