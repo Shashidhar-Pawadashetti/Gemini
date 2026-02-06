@@ -77,7 +77,7 @@ router.post("/chat", async(req,res)=>{
     }
 
     try{
-        const thread = await Thread.findOne({threadId});
+        let thread = await Thread.findOne({threadId});
 
         if(!thread){
             thread = new Thread({
@@ -93,6 +93,9 @@ router.post("/chat", async(req,res)=>{
         }
 
         const aiResponse = await getGeminiResponse(message);
+        if (!aiResponse) {
+            return res.status(503).json({ error: "Gemini is currently overloaded. Please try again later." });
+        }
 
         thread.messages.push({role:"ai",content:aiResponse});
         thread.updatedAt = new Date();
