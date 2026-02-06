@@ -1,5 +1,5 @@
 {
-  "name": "backend",
+  "name": "@code-crafters/gemini-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",

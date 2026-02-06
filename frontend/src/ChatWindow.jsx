@@ -4,6 +4,8 @@ import "./ChatWindow.css";
 import { MyContext } from "./MyContext.jsx";
 import {ScaleLoader} from "react-spinners";
 
+const backendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
 function ChatWindow() {
     const { prompt, setPrompt,
         reply, setReply,
@@ -13,23 +15,33 @@ function ChatWindow() {
     } = useContext(MyContext);
 
     const [loading, setLoading] = useState(false);
+    const [csrfToken, setCsrfToken] = useState(null);
+
+    useEffect(() => {
+        fetch(`${backendURL}/api/csrf-token`, { credentials: 'include' })
+            .then(res => res.json())
+            .then(data => setCsrfToken(data.csrfToken))
+            .catch(err => console.log(err));
+    }, []);
 
     const getReply = async () => {
-        setLoading(true)
-        if (!prompt.trim()) return;
+        if (!prompt.trim() || !csrfToken) return;
+        setLoading(true);
         const options = {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "X-CSRF-Token": csrfToken
             },
             body: JSON.stringify({
                 message: prompt,
                 threadId: currThreadId
-            })
+            }),
+            credentials: 'include'
         }
 
         try {
-            const response = await fetch("http://localhost:3000/api/chat", options);
+            const response = await fetch(`${backendURL}/api/chat`, options);
             const res = await response.json();
 
             if (response.ok) {
