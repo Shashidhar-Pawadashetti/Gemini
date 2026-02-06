@@ -75,7 +75,8 @@ function ChatWindow() {
             <div className="center-area">
                 {newChat ? (
                     <div className="greet-text">
-                        <p className="hello">Hello User!</p>
+                        
+                        <p className="hello"><span className="gemini-logo"><img src="../src/assets/gemini-color.svg" alt="" /></span>Hello User!</p>
                         <p className="help">How can I help you today?</p>
                     </div>
                 ) : (

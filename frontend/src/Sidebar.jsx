@@ -1,6 +1,72 @@
 import "./Sidebar.css";
+import { useContext, useEffect } from "react";
+import { MyContext } from "./MyContext.jsx";
+import {v1 as uuidv1} from "uuid";
 
 function Sidebar() {
+    const { allThreads, setAllThreads, currThreadId, setNewChat, setPrompt, setReply, setCurrThreadId, setPrevChats } = useContext(MyContext);
+
+    const getAllThreads = async () => {
+        try {
+            const response = await fetch("http://localhost:3000/api/thread");
+            const res = await response.json();
+
+            const filteredData = res.map((thread) => ({
+                threadId: thread.threadId,
+                title: thread.title,
+            }));
+
+            setAllThreads(filteredData);
+            // console.log(filteredData);
+            // console.log(res);
+        } catch (error) {
+            console.log(error);
+        }
+    };
+
+    useEffect(() => {
+        getAllThreads();
+    }, [currThreadId]);
+
+    const createNewChat = () => {
+        setNewChat(true);
+        setPrompt("");
+        setReply(null);
+        setCurrThreadId(uuidv1());
+        setPrevChats([]);
+    }
+
+    const changeThread = async(newThreadId) => {
+        setCurrThreadId(newThreadId);
+
+        try{
+            const response = await fetch(`http://localhost:3000/api/thread/${newThreadId}`);
+            const res = await response.json();
+            // console.log(res);
+            setPrevChats(res);
+            setNewChat(false);
+            setReply(null);
+        }catch(error){
+            console.log(error);
+        }
+    }
+
+    const deleteThread = async(threadId) => {
+        try{
+            const response = await fetch(`http://localhost:3000/api/thread/${threadId}`, {method: "DELETE"});
+            const res = await response.json();
+            console.log(res);
+
+            setAllThreads(prev => prev.filter(thread => thread.threadId !== threadId));
+
+            if(threadId === currThreadId){
+                createNewChat();
+            }
+        }catch(error){
+            console.log(error);
+        }
+    }
+
     return (
         <section className="sidebar">
             <div className="top-section">
@@ -17,7 +83,7 @@ function Sidebar() {
                 {/* Chat related UI */}
                 <div>
                     <div className="new-chat-container">
-                        <div className="new-chat">
+                        <div className="new-chat" onClick={createNewChat}>
                             <i className="fa-regular fa-pen-to-square"></i>
                             <span>New chat</span>
                         </div>
@@ -30,18 +96,20 @@ function Sidebar() {
                     <div>
                         <h5>Chats</h5>
                         <ul className="history">
-                            <li>
-                                <i className="fa-regular fa-message"></i>
-                                <span>What is React?</span>
-                            </li>
-                            <li>
-                                <i className="fa-regular fa-message"></i>
-                                <span>Debug this code</span>
-                            </li>
-                            <li>
-                                <i className="fa-regular fa-message"></i>
-                                <span>MERN Project Ideas</span>
-                            </li>
+                            {allThreads.map((thread, idx) => (
+                                <li key={thread.threadId} onClick={(e) => changeThread(thread.threadId)} className={thread.threadId === currThreadId ? "highlighted" : " "}>
+                                    {" "}
+                                    {/* Key goes here! Use ID, not Index */}
+                                    <i className="fa-regular fa-message"></i>
+                                    <span>{thread.title}</span>
+                                    <i className="fa-solid fa-trash"
+                                        onClick={(e)=>{
+                                            e.stopPropagation(); //Stop event bubbling
+                                            deleteThread(thread.threadId);
+                                        }}
+                                    ></i>
+                                </li>
+                            ))}
                         </ul>
                     </div>
                 </div>

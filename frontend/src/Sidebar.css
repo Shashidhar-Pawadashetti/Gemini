@@ -81,6 +81,7 @@
 }
 
 .history li{
+    position: relative;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -89,6 +90,7 @@
     cursor: pointer;
     color: #e3e3e3;
     font-size: 15px;
+    overflow: hidden;
 }
 
 .history li:hover {
@@ -110,5 +112,25 @@
     background-color: #282a2c;
 }
 
+.fa-trash{
+    opacity: 0;
+    position: absolute;
+    right: 15px;
+    /* margin-left: auto; */
+    transition: opacity 0.3s;
+    background-color: #1e1f20;
+    /* padding-left: 10px; */
+}
 
+.history li:hover .fa-trash{
+    opacity: 1;
+    color: #fff;
+}
 
+.fa-trash:hover{
+    color: #f87171 !important;
+}
+
+.highlighted{
+    background-color: #1e3c5a;
+}

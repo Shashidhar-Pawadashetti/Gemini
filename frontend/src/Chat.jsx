@@ -10,7 +10,12 @@ function Chat(){
     const [latestReply, setLatestReply] = useState(null);
 
     useEffect(() => {
-        if(!prevChats.length) return;
+        if(reply === null){
+            setLatestReply(null);
+            return;
+        }
+
+        if(!prevChats?.length) return;
 
         const content = reply.split(" ");
 
@@ -45,11 +50,29 @@ function Chat(){
                 }
 
                 {
+                    prevChats.length > 0 && (
+                        <>
+                            {
+                                latestReply === null ? (
+                                    <div className="gemini-div" key={"non-typing"}>
+                                        <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{prevChats[prevChats.length-1].content}</ReactMarkdown>
+                                    </div>
+                                ) : (
+                                    <div className="gemini-div" key={"typing"}>
+                                        <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{latestReply}</ReactMarkdown>
+                                    </div>
+                                )
+                            }
+                        </>
+                    )
+                }
+
+                {/* {
                     prevChats.length > 0 && latestReply !== null &&
                     <div className="gemini-div">
                         <ReactMarkdown rehypePlugins={[rehypeHighlight]}>{latestReply}</ReactMarkdown>
                     </div>
-                }
+                } */}
 
             </div>
         </>
