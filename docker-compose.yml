@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  # Service 1: MongoDB Database
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db  # Persist data so you don't lose chats when you restart
+
+  # Service 2: Backend API
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - MONGO_URI=mongodb://mongodb:27017/gemini-chat # Note: 'mongodb' matches service name above
+      - FRONTEND_URL=http://localhost:5173
+      - GEMINI_API_KEY=${GEMINI_API_KEY} # We will pass this from your local .env
+      - MODEL=gemini-2.5-flash
+    depends_on:
+      - mongodb
+
+  # Service 3: Frontend React App
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3000
+    depends_on:
+      - backend
+
+# Define the volume for MongoDB persistence
+volumes:
+  mongo-data:
