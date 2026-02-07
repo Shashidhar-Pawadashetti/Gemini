@@ -1,91 +1,33 @@
-name: CI Pipeline - Build & Test
-
-on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-jobs:
-  # JOB 1: Test the Backend
-  backend-test:
+# JOB 3: Build & Push to Docker Hub
+  build-and-push:
+    needs: [backend-test, frontend-test] # Only run if tests pass
     runs-on: ubuntu-latest
-    
-    # --- FIX START: Add MongoDB Service ---
-    services:
-      mongodb:
-        image: mongo:latest
-        ports:
-          - 27017:27017
-        # Wait for Mongo to be ready before running tests
-        options: >-
-          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    # --- FIX END ---
-
-    defaults:
-      run:
-        working-directory: ./backend
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24'
-        cache: 'npm'
-        cache-dependency-path: backend/package-lock.json
-
-    - name: Install Dependencies
-      run: npm ci
-
-    - name: Run Backend Tests
-      run: npm test
-      env:
-        # We point to localhost because the 'services' block maps port 27017 to localhost
-        MONGO_URI: mongodb://localhost:27017/test
-        GEMINI_API_KEY: "mock-key-for-testing"
-        PORT: 3000  # <--- Added to fix "port undefined" error
-
-  # JOB 2: Test the Frontend
-  frontend-test:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '24'
-        cache: 'npm'
-        cache-dependency-path: frontend/package-lock.json
-
-    - name: Install Dependencies
-      run: npm ci
-
-    - name: Run Frontend Tests
-      run: npm test
-
-  # JOB 3: Verify Docker Builds
-  docker-build-check:
-    needs: [backend-test, frontend-test]
-    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'   # Only push when merging to main
     
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    - name: Build Backend Image
-      run: docker build ./backend -t gemini-backend:test
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
 
-    - name: Build Frontend Image
-      run: docker build ./frontend -t gemini-frontend:test
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and Push Backend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./backend
+        push: true
+        # This tags it as "username/repo:latest"
+        tags: ${{ secrets.DOCKER_USERNAME }}/gemini-backend:latest
+
+    - name: Build and Push Frontend
+      uses: docker/build-push-action@v5
+      with:
+        context: ./frontend
+        push: true
+        tags: ${{ secrets.DOCKER_USERNAME }}/gemini-frontend:latest
