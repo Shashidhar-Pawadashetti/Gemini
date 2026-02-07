@@ -1,6 +1,5 @@
 name: CI Pipeline - Build & Test
 
-# Trigger this pipeline on every push to the main branch
 on:
   push:
     branches: [ "main" ]
@@ -11,9 +10,24 @@ jobs:
   # JOB 1: Test the Backend
   backend-test:
     runs-on: ubuntu-latest
+    
+    # --- FIX START: Add MongoDB Service ---
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        # Wait for Mongo to be ready before running tests
+        options: >-
+          --health-cmd mongo
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    # --- FIX END ---
+
     defaults:
       run:
-        working-directory: ./backend  # Important: commands run inside the backend folder
+        working-directory: ./backend
 
     steps:
     - name: Checkout Code
@@ -22,7 +36,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '24'
+        node-version: '18'
         cache: 'npm'
         cache-dependency-path: backend/package-lock.json
 
@@ -32,9 +46,10 @@ jobs:
     - name: Run Backend Tests
       run: npm test
       env:
-        # We mock these because we don't have a real DB in this test job yet
+        # We point to localhost because the 'services' block maps port 27017 to localhost
         MONGO_URI: mongodb://localhost:27017/test
         GEMINI_API_KEY: "mock-key-for-testing"
+        PORT: 3000  # <--- Added to fix "port undefined" error
 
   # JOB 2: Test the Frontend
   frontend-test:
@@ -50,7 +65,7 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '24'
+        node-version: '18'
         cache: 'npm'
         cache-dependency-path: frontend/package-lock.json
 
@@ -58,11 +73,11 @@ jobs:
       run: npm ci
 
     - name: Run Frontend Tests
-      run: npm test  # This runs 'vitest run' as per your package.json
+      run: npm test
 
-  # JOB 3: Verify Docker Builds (The "Integration" Check)
+  # JOB 3: Verify Docker Builds
   docker-build-check:
-    needs: [backend-test, frontend-test] # Only run this if tests pass
+    needs: [backend-test, frontend-test]
     runs-on: ubuntu-latest
     
     steps:
@@ -74,6 +89,3 @@ jobs:
 
     - name: Build Frontend Image
       run: docker build ./frontend -t gemini-frontend:test
-      
-    - name: Verify Images Created
-      run: docker images
