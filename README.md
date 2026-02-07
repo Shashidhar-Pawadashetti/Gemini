@@ -88,6 +88,30 @@ Access the application at `http://localhost:5173`
 - Credentials included in requests
 - Environment variables for sensitive data
 
+## Testing
+
+### Backend Tests
+
+Run backend tests:
+```bash
+cd backend
+npm test
+```
+
+### Frontend Tests
+
+Run frontend tests once:
+```bash
+cd frontend
+npm test
+```
+
+Run frontend tests in watch mode:
+```bash
+cd frontend
+npm run test:watch
+```
+
 ## License
 
 ISC

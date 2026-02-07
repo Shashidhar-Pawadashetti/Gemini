@@ -16,7 +16,9 @@
     "@google/genai": "^1.38.0",
     "@google/generative-ai": "^0.24.1",
     "axios": "^1.13.4",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
+    "csurf": "^1.11.0",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
     "mongoose": "^9.1.5",
@@ -33,6 +35,10 @@
   "jest": {
     "transform": {
       "^.+\\.[t|j]sx?$": "babel-jest"
-    }
+    },
+    "testEnvironment": "node",
+    "transformIgnorePatterns": [
+      "node_modules/(?!(supertest)/)"
+    ]
   }
 }
