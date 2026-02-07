@@ -1,0 +1,79 @@
+name: CI Pipeline - Build & Test
+
+# Trigger this pipeline on every push to the main branch
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # JOB 1: Test the Backend
+  backend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./backend  # Important: commands run inside the backend folder
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Run Backend Tests
+      run: npm test
+      env:
+        # We mock these because we don't have a real DB in this test job yet
+        MONGO_URI: mongodb://localhost:27017/test
+        GEMINI_API_KEY: "mock-key-for-testing"
+
+  # JOB 2: Test the Frontend
+  frontend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '24'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Run Frontend Tests
+      run: npm test  # This runs 'vitest run' as per your package.json
+
+  # JOB 3: Verify Docker Builds (The "Integration" Check)
+  docker-build-check:
+    needs: [backend-test, frontend-test] # Only run this if tests pass
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Build Backend Image
+      run: docker build ./backend -t gemini-backend:test
+
+    - name: Build Frontend Image
+      run: docker build ./frontend -t gemini-frontend:test
+      
+    - name: Verify Images Created
+      run: docker images
