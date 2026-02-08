@@ -25,12 +25,12 @@ services:
 
   frontend:
     # CHANGE: Use the image from Docker Hub
-    image: <YOUR_DOCKER_USERNAME>/gemini-frontend:latest
+    image: shashidharbp04/gemini-frontend:latest
     ports:
       - "5173:5173"
     environment:
       # In production, the frontend needs to know where the backend is
-      - VITE_BACKEND_URL=http://<YOUR_EC2_PUBLIC_IP>:3000
+      - VITE_BACKEND_URL=http://13.126.134.136:3000
     depends_on:
       - backend
 
