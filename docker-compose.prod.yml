@@ -3,20 +3,20 @@ version: '3.8'
 services:
   mongodb:
     image: mongo:latest
+    restart: always
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
 
   backend:
-    # CHANGE: Use the image from Docker Hub instead of 'build: .'
     image: shashidharbp04/gemini-backend:latest
+    restart: always
     ports:
       - "3000:3000"
     environment:
       - PORT=3000
       - MONGO_URI=mongodb://mongodb:27017/gemini-chat
-      # In production, we use the Public IP of the EC2 instance
       - FRONTEND_URL=http://13.126.134.136:5173
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - MODEL=gemini-2.5-flash
@@ -24,15 +24,19 @@ services:
       - mongodb
 
   frontend:
-    # CHANGE: Use the image from Docker Hub
     image: shashidharbp04/gemini-frontend:latest
     ports:
       - "5173:5173"
     environment:
-      # In production, the frontend needs to know where the backend is
       - VITE_BACKEND_URL=http://13.126.134.136:3000
     depends_on:
       - backend
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30
 
 volumes:
   mongo-data:
