@@ -35,7 +35,7 @@ describe('ChatWindow Component', () => {
             );
         });
         await waitFor(() => {
-            expect(screen.getByText(/Hello User/i)).toBeInTheDocument();
+            expect(screen.getByText(/Hello Shashidhar/i)).toBeInTheDocument();
         });
     });
 
