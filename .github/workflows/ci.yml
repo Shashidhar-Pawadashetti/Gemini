@@ -1,4 +1,79 @@
-# JOB 3: Build & Push to Docker Hub
+name: CI Pipeline - Build & Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:  # <--- This keyword was likely missing or misaligned
+  
+  # JOB 1: Test the Backend
+  backend-test:
+    runs-on: ubuntu-latest
+    
+    # Service container for MongoDB
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand(\"ping\")'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    defaults:
+      run:
+        working-directory: ./backend
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'  # Node 20 for latest tools
+        cache: 'npm'
+        cache-dependency-path: backend/package-lock.json
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Run Backend Tests
+      run: npm test
+      env:
+        MONGO_URI: mongodb://localhost:27017/test
+        GEMINI_API_KEY: "mock-key-for-testing"
+        PORT: 3000
+
+  # JOB 2: Test the Frontend
+  frontend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Run Frontend Tests
+      run: npm test
+
+  # JOB 3: Build & Push to Docker Hub
   build-and-push:
     needs: [backend-test, frontend-test] # Only run if tests pass
     runs-on: ubuntu-latest
@@ -22,7 +97,6 @@
       with:
         context: ./backend
         push: true
-        # This tags it as "username/repo:latest"
         tags: ${{ secrets.DOCKER_USERNAME }}/gemini-backend:latest
 
     - name: Build and Push Frontend
